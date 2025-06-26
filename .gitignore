@@ -1,0 +1,6 @@
+build/
+dewel/
+logs/
+*.pyc
+.vscode/
+
