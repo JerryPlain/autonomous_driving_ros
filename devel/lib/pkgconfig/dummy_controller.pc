@@ -1,0 +1,8 @@
+prefix=/home/jerry/autonomous_ws/devel
+
+Name: dummy_controller
+Description: Description of dummy_controller
+Version: 0.0.6657
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: simulation roscpp std_msgs
