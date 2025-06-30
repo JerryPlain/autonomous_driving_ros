@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="traffic_light_hsv_detector"
+        type="color_detector_cpp"
+        name="color_detector_cpp"
+        output="screen">
+    <remap from="image_raw" to="/Unity_ROS_message_Rx/OurCar/Sensors/RGBCameraLeft/image_raw"/>
+  </node>
+</launch>
+
