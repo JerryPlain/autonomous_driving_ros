@@ -1,0 +1,8 @@
+prefix=/home/jerry/autonomous_ws/devel
+
+Name: perception
+Description: Description of perception
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: cv_bridge image_transport octomap_ros roscpp sensor_msgs std_msgs tf2 tf2_ros nodelet depth_image_proc
