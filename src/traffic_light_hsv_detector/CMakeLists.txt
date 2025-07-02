@@ -55,15 +55,6 @@ target_link_libraries(color_detector_node
   ${OpenCV_LIBRARIES}
 )
 
-add_executable(data_fusion src/data_fusion.cpp)
-add_dependencies(data_fusion
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(data_fusion
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
 add_executable(semantic_depth_median_node src/semantic_depth_median_node.cpp)
 add_dependencies(semantic_depth_median_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(semantic_depth_median_node ${catkin_LIBRARIES})

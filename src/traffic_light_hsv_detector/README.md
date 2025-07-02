@@ -11,46 +11,23 @@
 3.  The projected RGB-pixel-coordinates are used in the last node. Here a HSV-Filter measures the current traffic light state. 
 
 ### How to get started:
-1.  Clone this branch
+1.  Clone this branch and move into the folder:
 2.  Build repository:
 
     ```
     catkin build traffic_light_hsv_detector 
     ```
-3.  open 5 terminals and source 5 times!
+3.  Source this workspace:
 
     ```
     source devel/setup.bash
     ```
-4.  In the first terminal: 
+4.  Start the simulation and the three nodes of this package: 
 
     ```
-    roscore
+    roslaunch traffic_light_hsv_detector detection_pipeline.launch 
     ```
-5.  In the second terminal:
-
-    ```
-    roslaunch simulation simulation.launch
-    ```
-6.   In the third terminal:
-    
-    ```
-    rosrun traffic_light_hsv_detector semantic_depth_median_node
-    ```
-7.  In the forth terminal: 
-
-    ```
-    rosrun traffic_light_hsv_detector traffic_light_detection
-    ```
-8.  In the fith terminal: 
-
-    ```
-    rosrun traffic_light_hsv_detector color_detector_node
-    ```
-
-
 ## Comment:
 ### This is not the final package. It should be fine to get started. The next steps for me are:
-- create launch file for all nodes
 - create a decision logic which traffic light is the relevant one
 - (adjust published message type: /traffic_light_color)

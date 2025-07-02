@@ -1,0 +1,25 @@
+<launch>	  
+  <!-- 1) Semantic + Depth → Median-Node -->
+  <node pkg="traffic_light_hsv_detector"
+        type="semantic_depth_median_node"
+        name="semantic_depth_median_node"
+        output="screen"/>
+
+  <!-- 2) Projection-Node -->
+  <node pkg="traffic_light_hsv_detector"
+        type="traffic_light_detection"
+        name="traffic_light_detection"
+        output="screen"/>
+
+  <!-- 3) HSV-Color-Detector -->
+  <node pkg="traffic_light_hsv_detector"
+        type="color_detector_node"
+        name="color_detector_node"
+        output="screen"/>
+  <!-- include einer Launch-Datei aus einem anderen Package -->
+  <include file="$(find simulation)/launch/simulation.launch">
+    <!-- Hier kannst du bei Bedarf Argumente weiterreichen: -->
+    <!-- <arg name="use_sim_time" value="true"/> -->
+  </include>
+
+</launch>
