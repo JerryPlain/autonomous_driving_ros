@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(traffic_light_hsv_detector)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
@@ -7,16 +8,20 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   image_transport
   cv_bridge
+  message_filters
+  geometry_msgs
 )
 
 add_message_files(
   FILES
-    BoundingBox.msg
-    BoundingBoxes.msg
+  TrafficLight.msg
+  TrafficLightArray.msg
 )
 
 generate_messages(
-  DEPENDENCIES std_msgs
+  DEPENDENCIES 
+  std_msgs
+  geometry_msgs
 )
 
 catkin_package(
@@ -27,6 +32,7 @@ catkin_package(
     std_msgs
     image_transport
     cv_bridge
+    message_filters
 )
 
 include_directories(
@@ -34,18 +40,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-## 5) SegmentationProcessor Node
-add_executable(segmentation_processor_node
-  src/segmentation_processor_node.cpp
-)
-add_dependencies(segmentation_processor_node
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(segmentation_processor_node
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-)
+
 
 ## 6) ColorDetector Node
 add_executable(color_detector_node
@@ -60,4 +55,20 @@ target_link_libraries(color_detector_node
   ${OpenCV_LIBRARIES}
 )
 
+add_executable(data_fusion src/data_fusion.cpp)
+add_dependencies(data_fusion
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(data_fusion
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+add_executable(semantic_depth_median_node src/semantic_depth_median_node.cpp)
+add_dependencies(semantic_depth_median_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(semantic_depth_median_node ${catkin_LIBRARIES})
+
+add_executable(traffic_light_detection src/traffic_light_detection.cpp)
+add_dependencies(traffic_light_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(traffic_light_detection ${catkin_LIBRARIES})
 

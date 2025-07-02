@@ -1,127 +1,127 @@
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <traffic_light_hsv_detector/TrafficLightArray.h>
 #include <std_msgs/String.h>
-#include <traffic_light_hsv_detector/BoundingBoxes.h>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
-class ColorDetector {
+class ColorDetectorNode
+{
 public:
-  ColorDetector(ros::NodeHandle& nh)
-    : it_(nh)
+  ColorDetectorNode(ros::NodeHandle& nh)
+    : nh_(nh),
+      sub_tl_(nh_,    "traffic_lights_rgb", 1),
+      sub_rgb_(nh_,   "/Unity_ROS_message_Rx/OurCar/Sensors/RGBCameraLeft/image_raw", 1)
   {
-    // 1) Publisher für Ampelfarbe
-    pub_ = nh.advertise<std_msgs::String>("traffic_light/color", 1);
+    typedef message_filters::sync_policies::ApproximateTime<
+      traffic_light_hsv_detector::TrafficLightArray,
+      sensor_msgs::Image
+    > SyncPolicy;
+    sync_.reset(new message_filters::Synchronizer<SyncPolicy>(
+      SyncPolicy(10), sub_tl_, sub_rgb_));
+    sync_->registerCallback(
+      boost::bind(&ColorDetectorNode::cb, this, _1, _2));
 
-    // 2) Subscriber für Bounding-Boxes
-    bbox_sub_ = nh.subscribe(
-      "traffic_light/bounding_boxes", 1,
-      &ColorDetector::bboxCb, this
-    );
+    pub_color_ = nh_.advertise<std_msgs::String>("traffic_light_color", 1);
 
-    // 3) Subscriber für RGB-Bild
-    img_sub_ = it_.subscribe(
-      "/Unity_ROS_message_Rx/OurCar/Sensors/RGBCameraLeft/image_raw",
-      1,
-      &ColorDetector::imageCb,
-      this
-    );
+    // Deine HSV-Bereiche
+    lo_r1_ = cv::Scalar(  0,120,200); hi_r1_ = cv::Scalar( 10,255,255);
+    lo_r2_ = cv::Scalar(170,120,200); hi_r2_ = cv::Scalar(179,255,255);
+    lo_y_  = cv::Scalar( 25,140,200); hi_y_  = cv::Scalar( 35,225,255);
+    lo_g_  = cv::Scalar( 40,130,200); hi_g_  = cv::Scalar( 80,245,255);
 
-    // HSV-Ranges initialisieren
-    min_pixel_count_ = 1;
-    lo_red1_   = cv::Scalar(  0, 120, 200);
-    hi_red1_   = cv::Scalar( 10, 255, 255);
-    lo_red2_   = cv::Scalar(170, 120, 200);
-    hi_red2_   = cv::Scalar(179, 255, 255);
-    lo_yellow_ = cv::Scalar( 25, 140, 200);
-    hi_yellow_ = cv::Scalar( 35, 225, 255);
-    lo_green_  = cv::Scalar( 40, 130, 200);
-    hi_green_  = cv::Scalar( 80, 245, 255);
-
-    ROS_INFO("ColorDetector gestartet, warte auf Bounding-Boxes …");
+    ROS_INFO("ColorDetectorNode ready");
   }
 
 private:
-void bboxCb(const traffic_light_hsv_detector::BoundingBoxes::ConstPtr& msg)
-{
-  bboxes_.clear();
-  ROS_INFO("Empfange %zu BoundingBoxes", msg->boxes.size());
-
-  for (const auto& bb : msg->boxes)
+  void cb(
+    const traffic_light_hsv_detector::TrafficLightArray::ConstPtr& tl_msg,
+    const sensor_msgs::ImageConstPtr&                            img_msg)
   {
-    // bb ist hier gültig – und wir benutzen printf-Style Platzhalter
-    ROS_INFO("  Box: x=%d, y=%d, width=%d, height=%d",
-             bb.x, bb.y, bb.width, bb.height);
-
-    bboxes_.emplace_back(bb.x, bb.y, bb.width, bb.height);
-  }
-}
-
-
-  void imageCb(const sensor_msgs::ImageConstPtr& msg)
-  {
-    if (bboxes_.empty()) return;
-
-    // BGR → HSV
-    cv::Mat bgr = cv_bridge::toCvShare(msg, "bgr8")->image;
+    // 1) BGR→HSV
+    cv_bridge::CvImageConstPtr cvb;
+    try {
+      cvb = cv_bridge::toCvShare(img_msg, "bgr8");
+    } catch (...) {
+      ROS_ERROR("cv_bridge failed");
+      return;
+    }
     cv::Mat hsv;
-    cv::cvtColor(bgr, hsv, cv::COLOR_BGR2HSV);
+    cv::cvtColor(cvb->image, hsv, cv::COLOR_BGR2HSV);
 
-    // Für jede Box: Farbe detektieren
-    for (size_t i = 0; i < bboxes_.size(); ++i)
+    // 2) Für jede Detektion
+    for (auto& tl : tl_msg->lights)
     {
-      cv::Rect roi = bboxes_[i] & cv::Rect(0,0,hsv.cols,hsv.rows);
-      if (roi.area() < 1) continue;
+      int u = int(std::round(tl.centroid_pixel.x));
+      int v = int(std::round(tl.centroid_pixel.y));
+
+      // 3) ROI-Radius aus Distanz: r ≈ f·(H/2)/Z, hier als Konstante R=16px
+      const int R = 16;
+      cv::Rect roi(u-R, v-R, 2*R, 2*R);
+      roi &= cv::Rect(0,0,hsv.cols,hsv.rows);
+      if (roi.empty()) continue;
 
       cv::Mat patch = hsv(roi);
-      // Rot-Maske
-      cv::Mat m1, m2, mask_r;
-      cv::inRange(patch, lo_red1_, hi_red1_, m1);
-      cv::inRange(patch, lo_red2_, hi_red2_, m2);
-      cv::bitwise_or(m1, m2, mask_r);
-      // Gelb & Grün
-      cv::Mat mask_y, mask_g;
-      cv::inRange(patch, lo_yellow_, hi_yellow_, mask_y);
-      cv::inRange(patch, lo_green_,  hi_green_,  mask_g);
 
-      int cnt_r = cv::countNonZero(mask_r);
-      int cnt_y = cv::countNonZero(mask_y);
-      int cnt_g = cv::countNonZero(mask_g);
+      // 4) Masken & Counts
+      cv::Mat m1,m2, mr, my, mg;
+      cv::inRange(patch, lo_r1_, hi_r1_, m1);
+      cv::inRange(patch, lo_r2_, hi_r2_, m2);
+      cv::bitwise_or(m1,m2, mr);
+      cv::inRange(patch, lo_y_, hi_y_, my);
+      cv::inRange(patch, lo_g_, hi_g_, mg);
 
-      std::string color = "UNKNOWN";
-      if      (cnt_r > cnt_y && cnt_r > cnt_g) color = "RED";
-      else if (cnt_y > cnt_r && cnt_y > cnt_g) color = "YELLOW";
-      else if (cnt_g > cnt_r && cnt_g > cnt_y) color = "GREEN";
+      int cnt_r = cv::countNonZero(mr),
+          cnt_y = cv::countNonZero(my),
+          cnt_g = cv::countNonZero(mg);
+      int total = cnt_r + cnt_y + cnt_g;
 
-      std_msgs::String out;
-      out.data = "TL#" + std::to_string(i) + ":" + color;
-      pub_.publish(out);
+      // 5) Entscheidung
+      std::string state = "UNKNOWN";
+      float       conf  = 0.0f;
+      if (total > 0) {
+        if      (cnt_r >= cnt_y && cnt_r >= cnt_g) { state="RED";    conf = float(cnt_r)/total; }
+        else if (cnt_y >= cnt_r && cnt_y >= cnt_g) { state="YELLOW"; conf = float(cnt_y)/total; }
+        else if (cnt_g >= cnt_r && cnt_g >= cnt_y) { state="GREEN";  conf = float(cnt_g)/total; }
+      }
 
-      cv::rectangle(bgr, roi, cv::Scalar(255,0,0), 2);
+      // 6) Publish als String "id:state:confidence"
+
+      if (state != "UNKNOWN") {
+        std_msgs::String out;
+        std::ostringstream ss;
+        ss << tl.id << ":" << state << ":" << conf;
+        out.data = ss.str();
+        pub_color_.publish(out);
+      }
     }
-
-    cv::imshow("detected_lights", bgr);
-    cv::waitKey(1);
   }
 
-  image_transport::ImageTransport it_;
-  image_transport::Subscriber  img_sub_;
-  ros::Subscriber              bbox_sub_;
-  ros::Publisher               pub_;
-  std::vector<cv::Rect>        bboxes_;
-  int                          min_pixel_count_;
-  cv::Scalar                   lo_red1_, hi_red1_, lo_red2_, hi_red2_;
-  cv::Scalar                   lo_yellow_, hi_yellow_, lo_green_, hi_green_;
+  ros::NodeHandle nh_;
+  message_filters::Subscriber<traffic_light_hsv_detector::TrafficLightArray> sub_tl_;
+  message_filters::Subscriber<sensor_msgs::Image> sub_rgb_;
+  boost::shared_ptr<message_filters::Synchronizer<
+      message_filters::sync_policies::ApproximateTime<
+        traffic_light_hsv_detector::TrafficLightArray,
+        sensor_msgs::Image
+      >
+    >
+  > sync_;
+  ros::Publisher pub_color_;
+
+  cv::Scalar lo_r1_, hi_r1_, lo_r2_, hi_r2_, lo_y_, hi_y_, lo_g_, hi_g_;
+
+
 };
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "color_detector_node");
   ros::NodeHandle nh;
-  ColorDetector cd(nh);
+  ColorDetectorNode node(nh);
   ros::spin();
-  cv::destroyAllWindows();
   return 0;
 }
