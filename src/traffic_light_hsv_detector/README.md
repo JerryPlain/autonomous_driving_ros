@@ -33,9 +33,9 @@
     roslaunch simulation simulation.launch
     ```
 6.   In the third terminal:
-
+    
     ```
-    rosrun traffic_light_hsv_detector semantic_depth_median_node 
+    rosrun traffic_light_hsv_detector semantic_depth_median_node
     ```
 7.  In the forth terminal: 
 
