@@ -1,4 +1,4 @@
-### Package: Traffic Light HSV Detector
+'### Package: Traffic Light HSV Detector
 
 ## Explanation:
 # This package detects traffic lights and it's current state (red, yellow, green). It uses it's own message type (TrafficLight.msg)
@@ -12,14 +12,21 @@
 
 ## How to get started:
 1.  Clone this branch
-2.  catkin build traffic_light_hsv_detector 
+2.  Build repository
+    'catkin build traffic_light_hsv_detector '
 3.  open 5 terminals and source 5 times!
-4.  source devel/setup.bash
-5.  In the first terminal: roscore
-6.  In the second terminal: roslaunch simulation simulation.launch 
-7.  In the third terminal: rosrun traffic_light_hsv_detector semantic_depth_median_node 
-8.  In the forth terminal: rosrun traffic_light_hsv_detector traffic_light_detection
-9.  In the fith terminal: rosrun traffic_light_hsv_detector color_detector_node
+    'source devel/setup.bash'
+4.  In the first terminal: 
+    'roscore'
+5.  In the second terminal:
+    'roslaunch simulation simulation.launch'
+6.   In the third terminal: 
+    'rosrun traffic_light_hsv_detector semantic_depth_median_node '
+7.  In the forth terminal: 
+    'rosrun traffic_light_hsv_detector traffic_light_detection'
+8.  In the fith terminal: 
+    'rosrun traffic_light_hsv_detector color_detector_node'
+
 
 ## Comment:
 # This is not the final package. It should be fine to get started. The next steps for me are:
