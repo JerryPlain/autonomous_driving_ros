@@ -12,31 +12,38 @@
 
 ### How to get started:
 1.  Clone this branch
-2.  Build repository
+2.  Build repository:
+
     ```
     catkin build traffic_light_hsv_detector 
     ```
 3.  open 5 terminals and source 5 times!
+
     ```
     source devel/setup.bash
     ```
 4.  In the first terminal: 
+
     ```
     roscore
     ```
 5.  In the second terminal:
+
     ```
     roslaunch simulation simulation.launch
     ```
 6.   In the third terminal:
+
     ```
     rosrun traffic_light_hsv_detector semantic_depth_median_node 
     ```
 7.  In the forth terminal: 
+
     ```
     rosrun traffic_light_hsv_detector traffic_light_detection
     ```
 8.  In the fith terminal: 
+
     ```
     rosrun traffic_light_hsv_detector color_detector_node
     ```
