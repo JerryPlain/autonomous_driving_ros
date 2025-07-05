@@ -33,10 +33,13 @@ int main(int argc, char** argv)
     // 等待时间系统有效（无论是 sim_time 或 wall time）
     ros::Time::waitForValid();
 
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/DepthCamera",     0.3, 0.0, 1.2, 0, 0, 0, 1);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraLeft",   0.3, 0.1, 1.2, 0, 0, 0, 1);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraRight",  0.3, -0.1, 1.2, 0, 0, 0, 1);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/SemanticCamera",  0.3, 0.0, 1.3, 0, 0, 0, 1);
+    const double qx = -0.5, qy = 0.5, qz = -0.5, qw = 0.5;
+
+    publishStaticTF("OurCar/INS", "OurCar/Sensors/DepthCamera",    0.3,  0.0, 1.2, qx, qy, qz, qw);
+    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraLeft",  0.3,  0.1, 1.2, qx, qy, qz, qw);
+    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraRight", 0.3, -0.1, 1.2, qx, qy, qz, qw);
+    publishStaticTF("OurCar/INS", "OurCar/Sensors/SemanticCamera", 0.3,  0.0, 1.3, qx, qy, qz, qw);
+
 
     ROS_INFO(" Static TFs published with timestamps (C++)");
 

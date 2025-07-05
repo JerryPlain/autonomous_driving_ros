@@ -17,12 +17,36 @@ This package implements the perception pipeline for the autonomous driving proje
 Make sure the following ROS packages are installed:
 
 ```bash
+sudo apt update
 sudo apt install \
+  ros-noetic-nodelet \
   ros-noetic-depth-image-proc \
-  ros-noetic-octomap \
-  ros-noetic-octomap-msgs \
-  ros-noetic-octomap-ros \
-  ros-noetic-octomap-server
+  ros-noetic-octomap-server \
+  ros-noetic-octomap-rviz-plugins
+```
+Steps to start the perception package:
+- clone this repo
+```bash
+cd ~/<git_repository>
+catkin build
+source devel/setup.bash
+```
+Launch two files and the simulation
+```bash
+roslaunch simulation simulation.launch
+roslaunch perception perception.launch 
+roslaunch perception octomap.launch
+```
+### For debugging / Visualization
+Open Rviz
+```bash
+rviz
+```
+Choose following topics:
+- "Add" -> "By topic" -> "/octomap_point_cloud_centers" -> "PointCloud2"
+- "Add" -> "By display type" -> "TF"
+- "Global Options" -> "Fixed Frame" -> "Our_Car/INS
+- "PointCloud2" -> "Topic" -> "/depth/points" 
   
 
 Perception Task 1 – Coordinate Frame Build-up
