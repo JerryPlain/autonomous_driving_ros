@@ -1,10 +1,11 @@
 digraph G {
-"OurCar/INS" -> "OurCar/Sensors/DepthCamera"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751318599.616 sec old)\nBuffer length: 0.000 sec\n"];
-"OurCar/INS" -> "OurCar/Sensors/RGBCameraLeft"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751318599.616 sec old)\nBuffer length: 0.000 sec\n"];
-"OurCar/INS" -> "OurCar/Sensors/RGBCameraRight"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751318599.616 sec old)\nBuffer length: 0.000 sec\n"];
-"OurCar/INS" -> "OurCar/Sensors/SemanticCamera"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751318599.616 sec old)\nBuffer length: 0.000 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/DepthCamera"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751804796.390 sec old)\nBuffer length: 0.000 sec\n"];
+"world" -> "OurCar/INS"[label="Broadcaster: /Unity_ROS_message_Rx\nAverage rate: 40.122 Hz\nMost recent transform: 1751804796.385 ( 0.005 sec old)\nBuffer length: 4.935 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/RGBCameraLeft"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751804796.390 sec old)\nBuffer length: 0.000 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/RGBCameraRight"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751804796.390 sec old)\nBuffer length: 0.000 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/SemanticCamera"[label="Broadcaster: /static_tf_broadcaster\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1751804796.390 sec old)\nBuffer length: 0.000 sec\n"];
 edge [style=invis];
  subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
-"Recorded at time: 1751318599.616"[ shape=plaintext ] ;
- }->"OurCar/INS";
+"Recorded at time: 1751804796.390"[ shape=plaintext ] ;
+ }->"world";
 }

@@ -2,26 +2,28 @@
   <!-- Do not use sim-time -->
   <param name="use_sim_time" value="false"/>
 
-  <!-- 1) Nodelet-Manager fpr depth_image_proc -->
-  <node pkg="nodelet" type="nodelet" name="depth_nodelet_manager"
-        args="manager" output="screen"/>
-
-  <!-- 2) load point_cloud_xyz as Nodelet -->
-  <node pkg="nodelet" type="nodelet" name="depth_cloud_xyz"
-        args="load depth_image_proc/point_cloud_xyz depth_nodelet_manager"
-        output="screen">
-    <!-- remappen to Unity-Bridge Topics -->
-    <remap from="image_rect"  to="/Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/image_raw"/>
-    <remap from="camera_info" to="/Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/camera_info"/>
-    <remap from="points"      to="/depth/points"/>
-  </node>
-
-  <!-- 3) OctoMap-Server -->
+  <!-- OctoMap-Server with 2D projection -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server"
         output="screen">
     <param name="frame_id"   value="OurCar/INS"/>
     <param name="resolution" value="0.1"/>
     <param name="latch"      value="true"/>
+    
+    <!-- 2D occupancy grid parameters -->
+    <param name="filter_ground" value="false"/>
+    <param name="ground_filter/distance" value="0.04"/>
+    <param name="ground_filter/angle" value="0.15"/>
+    <param name="ground_filter/plane_distance" value="0.07"/>
+    
+    <!-- height filtering for 2D projection -->
+    <param name="pointcloud_min_z" value="-2.0"/>
+    <param name="pointcloud_max_z" value="2.0"/>
+    <param name="occupancy_min_z" value="-1.0"/>
+    <param name="occupancy_max_z" value="1.0"/>
+    
+    <!-- 2D map projection -->
+    <param name="incremental_2D_projection" value="true"/>
+    
     <remap from="cloud_in"   to="/depth/points"/>
   </node>
 </launch>
