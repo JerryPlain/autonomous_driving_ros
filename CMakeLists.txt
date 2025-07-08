@@ -20,6 +20,7 @@ include_directories(
 )
 
 ## 添加可执行文件并链接库
+<<<<<<< HEAD
 ##add_executable(waypoint_logger_node src/waypoint_logger_node.cpp)
 ##target_link_libraries(waypoint_logger_node ${catkin_LIBRARIES})
 ##add_executable(show_waypoints_node src/show_waypoints_node.cpp)
@@ -39,4 +40,7 @@ target_link_libraries(show_waypoints_fixed_node ${catkin_LIBRARIES})
 # 对应修改后的 path_publisher_node_fixed.cpp
 add_executable(path_publisher_fixed_node src/path_publisher_node_fixed.cpp)
 target_link_libraries(path_publisher_fixed_node ${catkin_LIBRARIES})
+
+
+
 
