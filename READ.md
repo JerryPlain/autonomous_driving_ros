@@ -31,12 +31,13 @@ catkin build
 source devel/setup.bash
 
 Run the waypoint logger node
-rosrun waypoint_logger waypoint_logger_node
+rosrun waypoint_logger waypoint_logger_fixed_node
 This node will log detected turns into a waypoints.csv file and publish the full path to /logged_path.
 
-Visualize waypoints in RViz
+Visualize waypoints and path in RViz
 
-rosrun waypoint_logger show_waypoints_node
+rosrun waypoint_logger show_waypoints_fixed_node
+rosrun waypoint_logger path_publisher_fixed_node
 Make sure RViz is subscribed to the following:
 
 Path:
