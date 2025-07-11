@@ -1,0 +1,20 @@
+<launch>	  
+  <!-- 1) Semantic + Depth → Median-Node -->
+  <node pkg="traffic_light_detector"
+        type="semantic_depth_median_node"
+        name="semantic_depth_median_node"
+        output="screen"/>
+
+  <!-- 2) Projection-Node -->
+  <node pkg="traffic_light_detector"
+        type="traffic_light_detection"
+        name="traffic_light_detection"
+        output="screen"/>
+
+  <!-- 3) HSV-Color-Detector -->
+  <node pkg="traffic_light_detector"
+        type="color_detector_node"
+        name="color_detector_node"
+        output="screen"/>
+
+</launch>
