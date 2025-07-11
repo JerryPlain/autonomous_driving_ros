@@ -1,7 +1,7 @@
 # Package: Traffic Light HSV Detector
 
 ## Explanation:
-### This package detects traffic lights and it's current state (red, yellow, green). It uses it's own message type (TrafficLight.msg)
+### This package detects traffic lights and it's current state (red, yellow, green). It uses it's own message types
 ### The pipeline is:
 1.  The semantic camera detects the localization of the traffic lights. Since the scale of the semantic camera is different to depth- and 
     the RGB cameras its scale needs to be normalized. 
