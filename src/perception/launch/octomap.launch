@@ -5,7 +5,7 @@
   <!-- OctoMap-Server with 2D projection -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_server"
         output="screen">
-    <param name="frame_id"   value="OurCar/INS"/>
+    <param name="frame_id"   value="world"/>
     <param name="resolution" value="0.1"/>
     <param name="latch"      value="true"/>
     
