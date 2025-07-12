@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <rosparam file="$(find perception)/config/global_costmap_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find perception)/config/local_costmap_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find perception)/config/base_local_planner_params.yaml" command="load" />
+  </node>
+</launch>
+

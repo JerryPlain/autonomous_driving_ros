@@ -7,10 +7,10 @@
 
   <license>TODO</license>
 
-  <!-- 添加 catkin 作为构建工具依赖 -->
+  <!-- 需要将 catkin 包作为构建工具依赖项 -->
   <buildtool_depend>catkin</buildtool_depend>
-
-  <!-- 运行时依赖 -->
+  
+  <!-- 其他依赖项 -->
   <depend>roscpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>

@@ -1,0 +1,11 @@
+digraph G {
+"OurCar/INS" -> "OurCar/Sensors/DepthCamera"[label="Broadcaster: /tf_depth_camera\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1752280891.456 sec old)\nBuffer length: 0.000 sec\n"];
+"world" -> "OurCar/INS"[label="Broadcaster: /Unity_ROS_message_Rx\nAverage rate: 29.724 Hz\nMost recent transform: 1752280891.466 ( -0.011 sec old)\nBuffer length: 4.946 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/SemanticCamera"[label="Broadcaster: /tf_semantic\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1752280891.456 sec old)\nBuffer length: 0.000 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/RGBCameraLeft"[label="Broadcaster: /tf_rgb_left\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1752280891.456 sec old)\nBuffer length: 0.000 sec\n"];
+"OurCar/INS" -> "OurCar/Sensors/RGBCameraRight"[label="Broadcaster: /tf_rgb_right\nAverage rate: 10000.000 Hz\nMost recent transform: 0.000 ( 1752280891.456 sec old)\nBuffer length: 0.000 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1752280891.456"[ shape=plaintext ] ;
+ }->"world";
+}

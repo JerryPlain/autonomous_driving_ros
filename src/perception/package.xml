@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>perception</name>
+  <version>0.0.0</version>
+  <description>The perception package</description>
+  <maintainer email="jerry@todo.todo">jerry</maintainer>
+  <license>MIT</license>
+
+  <!-- 构建工具 -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- 构建依赖 -->
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>octomap_ros</build_depend>
+  <build_depend>octomap_msgs</build_depend> 
+  <build_depend>nav_msgs</build_depend>     
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>nodelet</build_depend>
+  <build_depend>depth_image_proc</build_depend>
+
+  <!-- 构建导出依赖 -->
+  <build_export_depend>cv_bridge</build_export_depend>
+  <build_export_depend>image_transport</build_export_depend>
+  <build_export_depend>octomap_ros</build_export_depend>
+  <build_export_depend>octomap_msgs</build_export_depend> 
+  <build_export_depend>nav_msgs</build_export_depend>  
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <build_export_depend>tf2</build_export_depend>
+  <build_export_depend>tf2_ros</build_export_depend>
+  <build_export_depend>nodelet</build_export_depend>
+  <build_export_depend>depth_image_proc</build_export_depend>
+
+  <!-- 运行依赖 -->
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>octomap_ros</exec_depend>
+  <exec_depend>octomap_msgs</exec_depend> 
+  <exec_depend>nav_msgs</exec_depend>    
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>nodelet</exec_depend>
+  <exec_depend>depth_image_proc</exec_depend>
+
+  <export>
+    <!-- 如果你定义了 nodelet plugin.xml，可以在这里 export -->
+  </export>
+</package>
+

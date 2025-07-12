@@ -1,0 +1,21 @@
+<launch>
+  <!-- 加载地图 -->
+  <arg name="map_file" default="$(find perception)/maps/map5.yaml" />
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- 启动 move_base -->
+  <node name="move_base" pkg="move_base" type="move_base" output="screen">
+    <rosparam file="$(find perception)/config/move_base_params.yaml" command="load" />
+    <rosparam file="$(find perception)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find perception)/config/global_costmap_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find perception)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find perception)/config/local_costmap_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find perception)/config/base_local_planner_params.yaml" command="load" />
+  </node>
+
+  <!-- 如果需要，可以添加 static transform broadcaster -->
+  <!-- 比如：将 map → base_link 的静态 tf -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_base" args="0 0 0 0 0 0 map base_link" />
+
+</launch>
+

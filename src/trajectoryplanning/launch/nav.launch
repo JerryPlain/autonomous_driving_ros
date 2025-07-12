@@ -1,0 +1,15 @@
+<launch>
+  <!-- 启动 map_server，加载保存好的地图 -->
+  <node name="map_server" pkg="map_server" type="map_server" args="//home/user/maps/my_map.yaml"/>
+
+  <!-- 启动 AMCL（自适应蒙特卡洛定位），实时定位 -->
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <param name="odom_frame_id" value="odom"/>
+    <param name="base_frame_id" value="base_link"/>
+    <param name="global_frame_id" value="map"/>
+  </node>
+
+  <!-- 启动 move_base（路径规划） -->
+  <include file="$(find trajectoryplanning)/launch/move_base.launch"/>
+</launch>
+

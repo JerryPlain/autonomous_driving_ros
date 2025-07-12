@@ -1,0 +1,17 @@
+<launch>
+  <!-- 启动 map_server，加载保存好的地图 -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find your_package_name)/maps/my_map.yaml"/>
+
+  <!-- 启动 AMCL，用于定位 -->
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <param name="odom_frame_id" value="odom"/>
+    <param name="base_frame_id" value="base_link"/>
+    <param name="global_frame_id" value="map"/>
+    <param name="update_min_d" value="0.2"/>
+  </node>
+
+  <!-- 启动 move_base -->
+  <include file="$(find your_nav_package)/launch/move_base.launch"/>
+
+</launch>
+
