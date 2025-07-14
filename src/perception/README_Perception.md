@@ -22,7 +22,7 @@ source devel/setup.bash
 ```bash
 cd ~/autonomous_ws
 source devel/setup.bash
-roslaunch simulation simulation.launch
+roslaunch simulation simulation_demo.launch
 ```
 
 #### Step 3: Launch perception module (TF + Point cloud generation)
@@ -38,6 +38,9 @@ cd ~/autonomous_ws
 source devel/setup.bash
 roslaunch perception octomap.launch
 ```
+
+### Step 5: Launch the rviz to visualize the octomap & occupancy grid
+rviz
 
 ### Verify System is Working
 
