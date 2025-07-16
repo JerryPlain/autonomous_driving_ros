@@ -1,0 +1,26 @@
+<launch>
+  <!-- 使用ROS内置的static_transform_publisher，提供正确的时间戳 -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_depth_camera"
+        args="0.3 0.0 1.2 -1.5708 0 -1.5708 OurCar/INS OurCar/Sensors/DepthCamera" />
+  
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_rgb_left"
+        args="0.3 0.1 1.2 -1.5708 0 -1.5708 OurCar/INS OurCar/Sensors/RGBCameraLeft" />
+  
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_rgb_right"
+        args="0.3 -0.1 1.2 -1.5708 0 -1.5708 OurCar/INS OurCar/Sensors/RGBCameraRight" />
+  
+  <node pkg="tf2_ros" type="static_transform_publisher" name="tf_semantic"
+        args="0.3 0.0 1.3 -1.5708 0 -1.5708 OurCar/INS OurCar/Sensors/SemanticCamera" />
+
+  <!-- Nodelet 管理器 -->
+  <node pkg="nodelet" type="nodelet" name="depth_image_proc_manager" args="manager" output="screen" />
+
+  <!-- Depth to PointCloud -->
+  <node pkg="nodelet" type="nodelet" name="depth_to_cloud"
+        args="load depth_image_proc/point_cloud_xyz depth_image_proc_manager" output="screen">
+    <remap from="image_rect" to="/Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/image_raw"/>
+    <remap from="camera_info" to="/Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/camera_info"/>
+    <remap from="points" to="/depth/points"/>
+    <param name="output_frame_id" value="OurCar/Sensors/DepthCamera"/>
+  </node>
+</launch>
