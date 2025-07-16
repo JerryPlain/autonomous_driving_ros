@@ -1,0 +1,19 @@
+<package format="2">
+  <name>path_recorder</name>
+  <version>0.0.0</version>
+  <description>The path_recorder package</description>
+
+  <maintainer email="your-email@example.com">Your Name</maintainer>
+
+  <license>TODO</license>
+
+  <!-- 添加 catkin 作为构建工具依赖 -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- 运行时依赖 -->
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>visualization_msgs</depend>
+</package>
+
