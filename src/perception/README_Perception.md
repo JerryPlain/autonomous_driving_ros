@@ -1,6 +1,25 @@
 # Perception Module by Shijie Zhou
+Overview: Perception Module for Autonomous Driving
+This module implements a complete perception pipeline for our ROS-based autonomous driving system with Unity simulation. It receives depth images from a virtual camera, generates 3D point clouds, constructs a 3D OctoMap, and projects it into a 2D occupancy grid (/projected_map) for downstream planning and navigation.
 
-This package implements the perception pipeline for the autonomous driving project. It processes depth images from the Unity simulator, generates 3D point clouds, and builds an OctoMap-based occupancy grid for downstream modules like planning and control.
+The key contributions of this module include:
+
+✅ Coordinate Frame Setup: Built a full TF tree using static_transform_publisher to connect vehicle (OurCar/INS) with onboard sensors (Depth, RGB, Semantic cameras).
+
+✅ Depth-to-PointCloud Conversion: Converted raw depth images from Unity into ROS-compliant point clouds (/depth/points) using depth_image_proc/point_cloud_xyz via nodelets.
+
+✅ 3D + 2D Map Construction: Integrated octomap_server to build 3D voxel maps and enabled real-time 2D projection with height filtering.
+
+✅ TF Timestamp Fix: Resolved OctoMap synchronization issues by replacing hand-written TF broadcasters with tf2’s static publishers (with valid timestamps).
+
+✅ RViz Visualization: Provided recommended visualization setup for TF, 3D point cloud, OctoMap, and 2D occupancy grid.
+
+✅ System Robustness: Resolved nodelet manager conflicts, ensured frame alignment, and tuned OctoMap parameters for stable map generation.
+
+✅ Team Integration Ready: Produced /projected_map in nav_msgs/OccupancyGrid format with real-time updates and vehicle-centric frame, directly usable by the navigation stack.
+
+This module is verified to work in real time with the Unity simulator and is ready to be integrated with motion planning, SLAM, or control modules.
+
 
 ## Working Solution & Complete Workflow
 
@@ -22,7 +41,7 @@ source devel/setup.bash
 ```bash
 cd ~/autonomous_ws
 source devel/setup.bash
-roslaunch simulation simulation_demo.launch
+roslaunch simulation simulation.launch
 ```
 
 #### Step 3: Launch perception module (TF + Point cloud generation)
@@ -39,11 +58,42 @@ source devel/setup.bash
 roslaunch perception octomap.launch
 ```
 
-### Step 5: Launch the rviz to visualize the octomap & occupancy grid
-rviz
+### Step 5: Outcomes: TF Trees & Projected map in rviz visualization
+Add the following displays in RViz:
+
+1. **TF Display**
+   - Add → By display type → TF
+   - View complete coordinate frame tree
+
+#### TF Verification Commands
+```bash
+# Verify single transform
+rosrun tf tf_echo OurCar/INS OurCar/Sensors/DepthCamera
+
+# Generate and view TF tree
+rosrun tf view_frames
+xdg-open frames.pdf
+```
+
+2. **3D Point Cloud Display**
+   - Add → By topic → /depth/points → PointCloud2
+   - View real-time depth point cloud
+
+3. **2D Occupancy Grid Map Display** 
+   - Add → By display type → Map
+   - Topic: /projected_map
+   - View generated 2D navigation map
+
+4. **OctoMap Voxel Display**
+   - Add → By topic → /octomap_point_cloud_centers → PointCloud2
+   - View 3D occupancy grid
+
+5. **Set Reference Frame**
+   - Global Options → Fixed Frame → World
+
+Run the car through the correct path to get the final projected map which can be seen in the map folder
 
 ### Verify System is Working
-
 #### Check topic publishing status
 ```bash
 # Check all related topics
@@ -51,7 +101,7 @@ rostopic list | grep -E "(depth|octomap|map|Unity)"
 
 # Should see these key topics:
 # /depth/points                    - 3D point cloud data
-# /projected_map                   - 2D occupancy grid map ⭐
+# /projected_map                   - 2D occupancy grid map (the projected map)
 # /octomap_point_cloud_centers     - OctoMap voxel centers
 # /Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/image_raw
 ```
@@ -70,62 +120,12 @@ rostopic info /projected_map
 rostopic echo /projected_map -n1 | head -10
 # Should see valid header and map data
 ```
-
-#### Check TF transforms
-```bash
-rosrun tf tf_echo OurCar/INS OurCar/Sensors/DepthCamera
-# Should see correct transform data (timestamp 0.000 is normal for static transforms)
-```
-
-### 📊 **RViz Visualization Setup**
-
-```bash
-rviz
-```
-
-Add the following displays in RViz:
-
-1. **TF Display**
-   - Add → By display type → TF
-   - View complete coordinate frame tree
-
-2. **3D Point Cloud Display**
-   - Add → By topic → /depth/points → PointCloud2
-   - View real-time depth point cloud
-
-3. **2D Occupancy Grid Map Display** ⭐
-   - Add → By display type → Map
-   - Topic: /projected_map
-   - View generated 2D navigation map
-
-4. **OctoMap Voxel Display**
-   - Add → By topic → /octomap_point_cloud_centers → PointCloud2
-   - View 3D occupancy grid
-
-5. **Set Reference Frame**
-   - Global Options → Fixed Frame → OurCar/INS
-
-### **Key Generated Outputs**
+### Key Generated Outputs
 
 - **3D Point Cloud**: `/depth/points` (sensor_msgs/PointCloud2)
 - **2D Occupancy Grid Map**: `/projected_map` (nav_msgs/OccupancyGrid) 
 - **3D Voxel Map**: `/octomap_point_cloud_centers` (sensor_msgs/PointCloud2)
 - **complete TF Tree**: world → OurCar/INS → Sensors
-
-### **Configuration Details**
-
-#### OctoMap 2D Projection Parameters
-- `resolution: 0.1` - Map resolution 10cm
-- `incremental_2D_projection: true` - Enable 2D projection
-- `occupancy_min_z: -1.0, occupancy_max_z: 1.0` - 2D projection height range
-- `pointcloud_min_z: -2.0, pointcloud_max_z: 2.0` - Point cloud processing height range
-
-#### Static TF Transform Configuration
-```xml
-<!-- Use tf2_ros/static_transform_publisher for proper timestamp handling -->
-<node pkg="tf2_ros" type="static_transform_publisher" name="tf_depth_camera"
-      args="0.3 0.0 1.2 -1.5708 0 -1.5708 OurCar/INS OurCar/Sensors/DepthCamera" />
-```
 
 ### **Downstream Applications**
 The generated 2D occupancy grid map (`/projected_map`) can be directly used for:
@@ -133,10 +133,6 @@ The generated 2D occupancy grid map (`/projected_map`) can be directly used for:
 - Path planning algorithms
 - SLAM mapping
 - Obstacle detection and avoidance
-
----
-
-## Legacy Debugging Information (Issues Resolved)
 
 ### Dependencies
 
@@ -151,7 +147,6 @@ sudo apt install \
   ros-noetic-octomap-rviz-plugins
 ```
 
-### Original Project Structure
 
 #### Perception Task 1 – Coordinate Frame Build-up
 **Description**: This module builds the full static TF tree between the world coordinate frame and each onboard sensor. The transformation from world to OurCar/INS is provided by the simulation. We are responsible for broadcasting static transformations from OurCar/INS to each of the front-mounted cameras (depth, RGB left/right, semantic).
@@ -165,21 +160,11 @@ world
     ├── OurCar/Sensors/RGBCameraRight
     └── OurCar/Sensors/SemanticCamera
 ```
-
 #### Frame ID Alignment
 Each camera publishes messages on `/image_raw` and `/camera_info`, where the `header.frame_id` must match the `child_frame_id` used in the static transform.
 
 Example: `/Unity_ROS_message_Rx/OurCar/Sensors/DepthCamera/image_raw` → `frame_id = OurCar/Sensors/DepthCamera`
 
-#### TF Verification Commands
-```bash
-# Verify single transform
-rosrun tf tf_echo OurCar/INS OurCar/Sensors/DepthCamera
-
-# Generate and view TF tree
-rosrun tf view_frames
-xdg-open frames.pdf
-```
 
 ### Previous Issues Encountered (Now Fixed)
 
@@ -230,295 +215,37 @@ rostopic echo /octomap_binary -n1
 /projected_map
 ```
 
----
+--
 
-## **Quick Reference**
+Hi everyone, I’m Shijie Zhou. In this project, I was responsible for designing and implementing the perception module of our autonomous driving system in ROS, which processes simulated depth images from Unity to generate both 3D and 2D maps for downstream use like planning and navigation.
 
-### Essential Commands
-```bash
-# Build and source
-cd ~/autonomous_ws && catkin_make && source devel/setup.bash
+#### 1. Static TF Tree Construction
+I first built the complete TF coordinate frame tree for the car and its sensors.
+Using tf2_ros/static_transform_publisher, I published static transforms from OurCar/INS to each sensor—DepthCamera, RGBCameraLeft, RGBCameraRight, and SemanticCamera—with hardcoded positions and Euler angles.
 
-# Launch sequence
-roslaunch simulation simulation.launch    # Terminal 1
-roslaunch perception perception.launch    # Terminal 2  
-roslaunch perception octomap.launch      # Terminal 3
-rviz                                     # Terminal 4
+This resolved the timestamp issue we had with hand-written TF broadcasters, which caused OctoMap to reject incoming point clouds due to missing or zero timestamps.
+(because OctoMap should receive point cloud, these messages should have clear header.stamp & header.frame_id. In order to transform the point cloud to world coordinate, Octomap will check the transform by tf. so it has to get the transform(from=pointcloud.frame_id, to=map_frame, at=stamp) from TF tree). The handwritten static TF broadcaster is just publish once, the timestamp will never update so the checking process of octomap will fail, that is the reason that we cannot get the octomap early.
+But the tf2_ros/static_transform_publisher will provide a permanent static transform that every subscriber can get.
 
-# Verification
-rostopic hz /depth/points                # ~20-30Hz
-rostopic info /projected_map             # nav_msgs/OccupancyGrid
-rostopic list | grep -E "(depth|octomap|map)"
-```
+#### 2. Depth-to-PointCloud Conversion via Nodelet
+The Unity will publish topic of two sensors
+- /image_raw which is the 16-bit grey depth image
+- /camera_info which is the interior parameters matrix
 
-### Troubleshooting
-- **No point cloud**: Check if Unity simulation is running and depth images are publishing
-- **Empty OctoMap**: Verify TF transforms and point cloud frame_id
-- **Nodelet errors**: Restart perception.launch, ensure no duplicate nodelet managers
-- **RViz not showing map**: Set Fixed Frame to "OurCar/INS", check topic names
+What I do is to use depth_image_proc/point_cloud_xyz nodelet
+which is provided by ROS and used for turning the depth image & camera parameter martix to calculate the 3D point of each pixel and publish it as the sensor_msgs/PointCloud2
 
----
+#### 3. OctoMap + 2D Projection Setup
+After generating the point cloud from nodelet, i used the octomap_server_node which provided by ROS for creating the 3D pointcloud to OctoMap.
+I remapped the input (by defaultl /cloud_in )to /depth/points.
+To support navigation, I enabled incremental_2D_projection = true
+which means, the OctoMap will transfrom the 3D map to 2D ocuupancy grid realtime. which can be used for navigation.
+Height filters like occupancy_min_z and occupancy_max_z
+so that we could extract a clean, robot-centric 2D occupancy grid from the 3D map.
 
-## 📚 **Git & GitHub Workflow**
-
-### **Initial Setup (First Time Only)**
-
-#### 1. Configure Git (if not done already)
-```bash
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-```
-
-#### 2. Initialize Git Repository
-```bash
-cd ~/autonomous_ws
-git init
-```
-
-#### 3. Create .gitignore file
-```bash
-# Create .gitignore to exclude build files
-cat > .gitignore << EOF
-# ROS build files
-build/
-devel/
-install/
-.catkin_workspace
-
-# Compiled files
-*.pyc
-*.so
-*.o
-*.a
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Log files
-*.log
-
-# Temporary files
-*~
-*.tmp
-
-# PDF files (can be regenerated)
-frames.pdf
-EOF
-```
-
-### **Daily Workflow: Committing Changes**
-
-#### 1. Check Current Status
-```bash
-cd ~/autonomous_ws
-git status
-# Shows modified, added, deleted files
-```
-
-#### 2. Add Files to Staging
-```bash
-# Add specific files
-git add src/perception/README_perception_english.md
-git add src/perception/launch/perception.launch
-git add src/perception/launch/octomap.launch
-
-# Or add all modified files
-git add .
-
-# Or add all files in perception package
-git add src/perception/
-```
-
-#### 3. Commit Changes
-```bash
-# Commit with descriptive message
-git commit -m "feat: implement 2D occupancy grid mapping with OctoMap
-
-- Fixed TF timestamp issues using tf2_ros/static_transform_publisher
-- Resolved nodelet conflicts in launch files
-- Added 2D projection parameters for navigation
-- Updated README with complete workflow and troubleshooting"
-```
-
-#### 4. View Commit History
-```bash
-git log --oneline
-# Shows recent commits
-```
-
-### **Connecting to GitHub**
-
-#### 1. Create Repository on GitHub
-1. Go to [github.com](https://github.com)
-2. Click "New Repository" (green button)
-3. Name: `autonomous_ws` or `autonomous_driving_perception`
-4. Description: "ROS perception module for autonomous driving with Unity simulation"
-5. Choose Public or Private
-6. **Don't** initialize with README (you already have one)
-7. Click "Create Repository"
-
-#### 2. Connect Local Repository to GitHub
-```bash
-cd ~/autonomous_ws
-
-# Add remote repository (replace YOUR_USERNAME and REPO_NAME)
-git remote add origin https://github.com/YOUR_USERNAME/autonomous_ws.git
-
-# Verify remote connection
-git remote -v
-```
-
-#### 3. Push Code to GitHub
-```bash
-# Push to main branch (first time)
-git branch -M main
-git push -u origin main
-
-# For subsequent pushes
-git push origin main
-```
-
-### **Working with Team Members**
-
-#### 1. Clone Repository (for team members)
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/autonomous_ws.git
-cd autonomous_ws
-
-# Build the workspace
-catkin_make
-source devel/setup.bash
-```
-
-#### 2. Pull Latest Changes
-```bash
-cd ~/autonomous_ws
-git pull origin main
-# Gets latest changes from GitHub
-```
-
-#### 3. Create Feature Branches
-```bash
-# Create new branch for navigation work
-git checkout -b feature/navigation-integration
-
-# Work on navigation code...
-# ... make changes ...
-
-# Commit changes
-git add .
-git commit -m "feat: integrate 2D map with navigation stack"
-
-# Push feature branch
-git push origin feature/navigation-integration
-```
-
-#### 4. Create Pull Request
-1. Go to your GitHub repository
-2. Click "Compare & pull request" 
-3. Add description of changes
-4. Request review from team members
-5. Merge after approval
-
-### **Common Git Commands Quick Reference**
-
-```bash
-# Check status
-git status
-
-# View changes
-git diff
-git diff --staged
-
-# Add files
-git add filename.txt
-git add .                    # Add all files
-git add src/perception/      # Add specific folder
-
-# Commit
-git commit -m "descriptive message"
-git commit -am "message"     # Add and commit modified files
-
-# Push/Pull
-git push origin main
-git pull origin main
-
-# Branching
-git branch                   # List branches
-git branch feature-name      # Create branch
-git checkout feature-name    # Switch branch
-git checkout -b feature-name # Create and switch
-
-# Merge
-git checkout main
-git merge feature-name
-
-# View history
-git log
-git log --oneline
-git log --graph --oneline
-```
-
-### **Recommended Commit Message Format**
-
-```bash
-# Format: type(scope): description
-# 
-# Types:
-# feat:     New feature
-# fix:      Bug fix
-# docs:     Documentation changes
-# style:    Code style changes
-# refactor: Code refactoring
-# test:     Adding tests
-# chore:    Build/tool changes
-
-# Examples:
-git commit -m "feat(perception): add 2D occupancy grid mapping"
-git commit -m "fix(launch): resolve nodelet conflicts in octomap.launch"  
-git commit -m "docs(readme): add GitHub workflow instructions"
-git commit -m "refactor(tf): use tf2_ros static transform publisher"
-```
-
-### **Sharing with Navigation Team**
-
-#### For Navigation Team Members:
-```bash
-# 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/autonomous_ws.git
-cd autonomous_ws
-
-# 2. Install dependencies
-sudo apt update
-sudo apt install ros-noetic-nodelet ros-noetic-depth-image-proc \
-                 ros-noetic-octomap-server ros-noetic-octomap-rviz-plugins
-
-# 3. Build workspace
-catkin_make
-source devel/setup.bash
-
-# 4. Test the perception system
-roslaunch simulation simulation.launch    # Terminal 1
-roslaunch perception perception.launch    # Terminal 2
-roslaunch perception octomap.launch      # Terminal 3
-
-# 5. Verify 2D map for navigation
-rostopic info /projected_map              # Should show nav_msgs/OccupancyGrid
-```
-
-#### Key Information for Navigation Team:
-- **2D Map Topic**: `/projected_map` (nav_msgs/OccupancyGrid)
-- **Map Frame**: `OurCar/INS` 
-- **Map Resolution**: 0.1m (10cm per pixel)
-- **Update Rate**: Real-time (as robot moves)
-- **Map Coordinate System**: OurCar/INS frame (robot-centric)
-
----
+#### 4. Debugging and Validation
+I solved multiple issues:
+Fixed missing transforms that caused empty OctoMaps
+Avoided nodelet manager conflicts between perception and OctoMap
+Verified everything in RViz: TF tree, point cloud, 3D voxel map, and the final 2D grid
+Now the system runs stably with Unity in real time and produces a clean 2D occupancy map aligned with the robot frame.
