@@ -79,8 +79,8 @@ private:
     // for each detected box, filter by distance and determine color
     for (const auto& box : boxes_msg->boxes)
     {
-      // skip if farther than 25 meters
-      if (box.distance > 25.0)
+      // only respect traffic lights within 0m-7m
+      if (box.distance < 0.0 || box.distance > 7.0)
         continue;
 
       // compute local patch rectangle
@@ -117,6 +117,7 @@ private:
         traffic_light_detector::TrafficLightColor msg;
         msg.id    = box.id;
         msg.color = color;
+        msg.distance = box.distance;
         color_pub_.publish(msg);
       }
     }
