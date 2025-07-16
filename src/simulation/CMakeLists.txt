@@ -37,15 +37,6 @@ catkin_package(CATKIN_DEPENDS
         message_runtime        
 )
 
-include(ExternalProject)
-ExternalProject_Add(libsocket
-  GIT_REPOSITORY https://github.com/dermesser/libsocket
-  UPDATE_COMMAND ""
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CATKIN_DEVEL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_SHARED_LIBS=ON
-  BUILD_COMMAND make
-  INSTALL_COMMAND make install
-)
-
 find_package(Eigen3)
 
 link_directories(${CATKIN_DEVEL_PREFIX}/lib)
