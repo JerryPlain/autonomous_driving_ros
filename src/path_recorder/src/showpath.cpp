@@ -13,9 +13,9 @@ int main(int argc, char **argv)
     ros::Publisher path_pub = nh.advertise<nav_msgs::Path>("/recorded_path", 1, true);
 
     nav_msgs::Path path_msg;
-    path_msg.header.frame_id = "OurCar/INS"; // 需要和你的仿真 frame 对齐
+    path_msg.header.frame_id = "map"; // 需要和你的仿真 frame 对齐
 
-    std::ifstream csv_file("/home/kenway/桌面/tum/i2ros/main/src/path_recorder/recorded_path.csv");
+    std::ifstream csv_file("recorded_path.csv");
     if (!csv_file.is_open())
     {
         ROS_ERROR("无法打开 CSV 文件: recorded_path.csv");

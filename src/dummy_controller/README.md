@@ -19,6 +19,13 @@ It uses closed-loop PID control to track waypoints published to `/move_base_simp
 
 ---
 
+⚠️ Please note first: 
+you need to change line 78 in the file /src/path_recorder/src/csv_goal_publisher.cpp
+```bash
+std::string csv_path = "/src/path_recorder/recorded_path.csv";
+```
+to the actual CSV file path on your computer!
+
 ## ✅ Build the Workspace
 
 From the root of your workspace, run:
@@ -32,6 +39,18 @@ Then, in a new terminal, launch the Unity simulation node:
 source devel/setup.bash
 roslaunch simulation simulation.launch
 ```
+
+Start the 3 nodes of the traffic_light_detector package
+  ```bash
+    source devel/setup.bash
+    roslaunch traffic_light_detector detection_pipeline.launch
+  ```
+
+Start the node of the decision making package
+  ```bash
+  source devel/setup.bash
+  rosrun decision_making decision_making_node
+  ```
 A Unity simulation window should pop up, and you should be able to manually control the vehicle using the arrow keys or WASD.
 
 💬 Note: This is a minimal example launch file to verify that everything in the Unity simulation is accessible via ROS. You are encouraged to create and customize your own launch files if needed.

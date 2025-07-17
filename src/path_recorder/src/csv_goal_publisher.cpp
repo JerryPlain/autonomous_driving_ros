@@ -1,21 +1,17 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <std_msgs/Int32.h>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <std_msgs/Float64.h>  
-#include <tf/tf.h>             
 
 // 定义轨迹点结构体
 struct Waypoint {
-    double theta;
     double x;
     double y;
-    double yaw;
-    double v;
+    double theta;
 };
 
-// 从 CSV 文件中读取所有轨迹点
 std::vector<Waypoint> readWaypointsFromCSV(const std::string& filepath)
 {
     std::vector<Waypoint> waypoints;
@@ -34,6 +30,8 @@ std::vector<Waypoint> readWaypointsFromCSV(const std::string& filepath)
         std::stringstream ss(line);
         std::string token;
         Waypoint wp;
+        // index
+        getline(ss, token, ',');
 
         // time
         getline(ss, token, ',');
@@ -46,18 +44,10 @@ std::vector<Waypoint> readWaypointsFromCSV(const std::string& filepath)
         getline(ss, token, ',');
         wp.y = std::stod(token);
 
-        // z
-        getline(ss, token, ',');
-
-        // yaw
-        getline(ss, token, ',');
-        wp.yaw = std::stod(token);
-
         // v
         getline(ss, token, ',');
-        wp.v = std::stod(token);
 
-        // 简单写死 theta，如果需要可自行计算方向
+        // theta（可以自行加角度，这里默认 0）
         wp.theta = 0.0;
 
         waypoints.push_back(wp);
@@ -67,53 +57,67 @@ std::vector<Waypoint> readWaypointsFromCSV(const std::string& filepath)
     return waypoints;
 }
 
+// 当前索引
+int current_index = 0;
+bool goal_reached = true;
+
+void reachedCallback(const std_msgs::Int32::ConstPtr& msg)
+{
+    ROS_INFO("Received reached signal for index: %d", msg->data);
+    goal_reached = true;
+}
+
 int main(int argc, char** argv)
 {
-
     ros::init(argc, argv, "csv_goal_publisher");
     ros::NodeHandle nh;
 
     ros::Publisher goal_pub = nh.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1);
-    ros::Publisher velocity_pub = nh.advertise<std_msgs::Float64>("/target_velocity", 1);
+    ros::Subscriber reached_sub = nh.subscribe("/reached_goal", 1, reachedCallback);
 
-    // 修改成你自己的 CSV 文件完整路径
     std::string csv_path = "/home/kenway/桌面/tum/i2ros/main/src/path_recorder/recorded_path.csv";
     std::vector<Waypoint> waypoints = readWaypointsFromCSV(csv_path);
 
-    ros::Duration(2.0).sleep();  // 等待 publisher 初始化
+    // ⭐ 加入等待
+while (goal_pub.getNumSubscribers() == 0)
+{
+    ROS_WARN("Waiting for subscriber to connect to /move_base_simple/goal ...");
+    ros::Duration(0.5).sleep();
+}
 
-    for (const auto& wp : waypoints)
+    ros::Rate rate(10);
+
+    while (ros::ok() && current_index < waypoints.size())
     {
-        geometry_msgs::PoseStamped goal;
-        goal.header.frame_id = "map";
-        goal.header.stamp = ros::Time::now();
-        goal.pose.position.x = wp.x;
-        goal.pose.position.y = wp.y;
-
-        // 转换 yaw 为四元数
-        //tf::Quaternion q;
-        //q.setRPY(0, 0, wp.yaw);
-        //goal.pose.orientation.x = q.x();
-        //goal.pose.orientation.y = q.y();
-        //goal.pose.orientation.z = q.z();
-        //goal.pose.orientation.w = q.w();
-
-        // 发布位置
-        ROS_INFO("Publishing goal: x = %.2f, y = %.2f, yaw = %.2f, v = %.2f", wp.x, wp.y, wp.yaw, wp.v);
-        goal_pub.publish(goal);
-
-        // 发布速度
-        std_msgs::Float64 vel_msg;
-        vel_msg.data = wp.v;
-        velocity_pub.publish(vel_msg);
-
-        // 等待一段时间后再发下一个目标，可根据需要修改（比如监听是否到达）
-        ros::Duration(0.50).sleep();
         ros::spinOnce();
+
+        if (goal_reached)
+        {
+            Waypoint wp = waypoints[current_index];
+
+            geometry_msgs::PoseStamped goal;
+            goal.header.frame_id = "map";
+            goal.header.stamp = ros::Time::now();
+            goal.pose.position.x = wp.x;
+            goal.pose.position.y = wp.y;
+            goal.pose.orientation.w = 1.0;  // 默认朝向
+
+            // 把索引写进 header.seq
+            goal.header.seq = current_index;
+
+            goal_pub.publish(goal);
+
+            ROS_INFO("Publishing goal index: %d, x = %.2f, y = %.2f", current_index, wp.x, wp.y);
+        
+
+            goal_reached = false;
+            current_index++;
+        }
+
+        rate.sleep();
     }
 
     ROS_INFO("All goals published. Task completed.");
 
     return 0;
 }
-

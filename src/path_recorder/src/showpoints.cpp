@@ -6,7 +6,7 @@
 #include <vector>
 
 // CSV 文件路径（根据你自己的路径修改）
-std::string csv_file_path = "/home/kenway/桌面/tum/i2ros/main/src/path_recorder/recorded_path.csv";
+std::string csv_file_path = "/home/user/桌面/Projectros/introtoros_2025-main-project/project/src/path_recorder/recorded_path.csv";
 
 // 从 CSV 文件中读取点
 std::vector<geometry_msgs::Point> readPointsFromCSV(const std::string& filepath)
