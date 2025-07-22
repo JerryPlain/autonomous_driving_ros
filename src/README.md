@@ -1,94 +1,71 @@
-# Introduction to ROS – Course Project Autonomous Driving
+# 🚗📄 README — PID Controller Node for Unity Vehicle Simulation
 
-## Overview 
-This repository is part of the "Introduction to ROS" course project **Autonomous Driving**. It consists of a Unity-based driving simulation package and a dummy controller to help you understand how to control the vehicle.
+## ✅ Overview
 
-## System Requirements
--**Operating System**: Ubuntu 20.04 (either natively installed or via Windows Subsystem for Linux - WSL)
+This repository includes a ROS-based PID controller node (`pid_controller_node`) designed to control a simulated vehicle in Unity.  
+It uses closed-loop PID control to track waypoints published to `/move_base_simple/goal`, leveraging real-time feedback on vehicle position and speed.
 
--**ROS Version**: ROS Noetic
+---
 
--**Required Tools**:
-  - Standard ROS tools: `catkin`, `roscore`, etc.
-  - Git
-  - *Git LFS* (Large File Storage – required for downloading Unity binaries and large assets)
-    To install Git LFS, run:
-    
-    ```bash
-    sudo apt install git-lfs
-    git lfs install
-    ```
+## ✅ Features
 
-## Repository Structure
-This repository contains two ROS packages:
+- Subscribes to `/move_base_simple/goal` for target waypoints (`geometry_msgs::PoseStamped`)
+- Subscribes to vehicle pose from `/Unity_ROS_message_Rx/OurCar/CoM/pose`
+- Subscribes to vehicle speed from `/Unity_ROS_message_Rx/OurCar/CoM/twist`
+- PID control for:
+  - Throttle (longitudinal velocity)
+  - Steering (yaw angle)
+- Publishes control commands to the topic `car_command` (`simulation::VehicleControl`)
 
-- `simulation/`
-  - Contains a Unity-based simulation environment that mimics a vehicle's sensing and movement in a virtual city.
-  - Includes launch files, configuration scripts, and integration logic.
+---
 
-- `dummy_controller/`
-  - A basic ROS node used to control the vehicle within the simulation.
-  - Designed to demonstrate publishing control commands.
-
-## Getting Started
-
-### Clone the Repository to `/src` Folder in the Workspace
-
-This's how your workspace should look like...
-
-```text
-your_workspace/
-└── src/
-    ├── simulation/
-    ├── dummy_controller/
-    ├── CMakeList.txt
-    ├── setup_script.sh
-    └── README.md
-```
-
-### Run the Setup Script
-
-The script ensures that required simulation files and scripts are executable:
-
+⚠️ Please note first: 
+you need to change line 78 in the file /src/path_recorder/src/csv_goal_publisher.cpp
 ```bash
-bash src/setup_script.sh
+std::string csv_path = "/src/path_recorder/recorded_path.csv";
 ```
-Note that you are free to modify this script file to helps others setup your project.
+to the actual CSV file path on your computer!
 
-### Build the Workspace
+## ✅ Build the Workspace
+
+From the root of your workspace, run:
 
 ```bash
 catkin build
 ```
-Upon successful build, `devel`, `build` and `logs` will be automatically generated in your workspace.
-
-### Running the Simulation
-
-To launch the simulation node, run the command **after having ```roscore``` running**:
+Then, in a new terminal, launch the Unity simulation node:
 
 ```bash
 source devel/setup.bash
 roslaunch simulation simulation.launch
 ```
-You should see a window popping up and you should be able to control the vehicle with arrow keys or WASD.
 
-Note: this is only a minimal launch file to ensure that everything in Unity simulation is accessible by ROS. You could certainly build and run on your own launch file! 
+Start the 3 nodes of the traffic_light_detector package
+  ```bash
+    source devel/setup.bash
+    roslaunch traffic_light_detector detection_pipeline.launch
+  ```
 
-### Running the Dummy Controller Node
+Start the node of the decision making package
+  ```bash
+  source devel/setup.bash
+  rosrun decision_making decision_making_node
+  ```
+A Unity simulation window should pop up, and you should be able to manually control the vehicle using the arrow keys or WASD.
 
-Having **the roscore and the simulation node running**, run the node in another console:
+💬 Note: This is a minimal example launch file to verify that everything in the Unity simulation is accessible via ROS. You are encouraged to create and customize your own launch files if needed.
+
+✅ Running the Dummy Controller Node (Optional)
+If you'd like to test a simple dummy controller (without PID), run:
 
 ```bash
 source devel/setup.bash
 rosrun dummy_controller dummy_controller_node
 ```
-The vehicle should be able to accelerate and steer by itself.
+✅ Running the CSV Goal Publisher
+After making sure that both roscore and the simulation node are running, start the CSV goal publisher:
 
-## Customize the Simulation
-The simulation node provides a variety of configurable parameters, including the sensor setup, the socket port etc. For details please refer to [the README.md in simulation pacakge](simulation/README.md).
-
-## The Project Assignment
-The detailed task description and submission requirements are available in the project PDF uploaded to Moodle. Please review that document carefully.
-
-## Support
-If you encounter issues or have questions, please reach me via [my e-mail](mailto:jiaming.zhang@tum.de). I would love to help as much as I could :).
+```bash
+source devel/setup.bash
+rosrun path_recorder csv_goal_publisher
+```

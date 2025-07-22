@@ -1,6 +1,6 @@
 Overview of the dummy_controller Package
 
-The decision_making package is designed to make driving decisions based on recognized traffic light states and publish the decision as a string message to the /traffic_decision topic for other modules to use.
+The dummy_controller package is designed to make driving decisions based on recognized traffic light states and publish the decision as a string message to the /traffic_decision topic for other modules to use.
 Input Topic:
 
     /traffic_light_color (std_msgs::String)

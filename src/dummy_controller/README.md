@@ -1,30 +1,71 @@
-dummy_controller包功能概述
-用于基于交通灯识别结果做出驾驶决策，并将决策以字符串形式发布到话题 /traffic_decision 上，供其他模块使用。
-输入话题：
-    /traffic_light_color（std_msgs::String）
-    消息格式："id:state:confidence"
-    示例："1:RED:0.92"
-    其中 state 为交通灯的颜色，取值为 "RED"、"YELLOW"、"GREEN"。
+# 🚗📄 README — PID Controller Node for Unity Vehicle Simulation
 
-输出话题：
-    /traffic_decision（std_msgs::String）
-    发布的决策结果之一：
+## ✅ Overview
 
-        "BRAKE"：红灯，车辆应刹车
+This repository includes a ROS-based PID controller node (`pid_controller_node`) designed to control a simulated vehicle in Unity.  
+It uses closed-loop PID control to track waypoints published to `/move_base_simple/goal`, leveraging real-time feedback on vehicle position and speed.
 
-        "ACCELERATE"：黄灯，车辆应快速通过
+---
 
-        "DRIVE"：绿灯，车辆正常行驶
+## ✅ Features
 
-        "UNKNOWN"：未能识别交通灯状态
+- Subscribes to `/move_base_simple/goal` for target waypoints (`geometry_msgs::PoseStamped`)
+- Subscribes to vehicle pose from `/Unity_ROS_message_Rx/OurCar/CoM/pose`
+- Subscribes to vehicle speed from `/Unity_ROS_message_Rx/OurCar/CoM/twist`
+- PID control for:
+  - Throttle (longitudinal velocity)
+  - Steering (yaw angle)
+- Publishes control commands to the topic `car_command` (`simulation::VehicleControl`)
 
-控制模块使用：
-订阅/traffic_decision话题
-话题内容为:
-	"BRAKE" 表示检测到红灯
-	“ACCELERATE" 表示检测到黄灯
-	"DRIVE" 表示检测到绿灯
-	"UNKNOWN" 表示为识别到交通灯
-控制模块可根据话题的内容作出不同的速度控制策略，例如话题内容为“BRAKE”表示检测到红灯，可发布停止的速度；
-话题内容为“ACCELERATE"，表示检测到黄灯，可增加目前的速度行驶；话题内容为"DRIVE"，可保持当前速度；话题
-内容为"UNKNOWN",可不做处理
+---
+
+⚠️ Please note first: 
+you need to change line 78 in the file /src/path_recorder/src/csv_goal_publisher.cpp
+```bash
+std::string csv_path = "/src/path_recorder/recorded_path.csv";
+```
+to the actual CSV file path on your computer!
+
+## ✅ Build the Workspace
+
+From the root of your workspace, run:
+
+```bash
+catkin build
+```
+Then, in a new terminal, launch the Unity simulation node:
+
+```bash
+source devel/setup.bash
+roslaunch simulation simulation.launch
+```
+
+Start the 3 nodes of the traffic_light_detector package
+  ```bash
+    source devel/setup.bash
+    roslaunch traffic_light_detector detection_pipeline.launch
+  ```
+
+Start the node of the decision making package
+  ```bash
+  source devel/setup.bash
+  rosrun decision_making decision_making_node
+  ```
+A Unity simulation window should pop up, and you should be able to manually control the vehicle using the arrow keys or WASD.
+
+💬 Note: This is a minimal example launch file to verify that everything in the Unity simulation is accessible via ROS. You are encouraged to create and customize your own launch files if needed.
+
+✅ Running the Dummy Controller Node (Optional)
+If you'd like to test a simple dummy controller (without PID), run:
+
+```bash
+source devel/setup.bash
+rosrun dummy_controller dummy_controller_node
+```
+✅ Running the CSV Goal Publisher
+After making sure that both roscore and the simulation node are running, start the CSV goal publisher:
+
+```bash
+source devel/setup.bash
+rosrun path_recorder csv_goal_publisher
+```
