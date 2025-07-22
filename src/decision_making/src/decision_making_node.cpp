@@ -27,7 +27,6 @@ public:
     {
         std_msgs::String decision_msg;
 
-        // 检查是否超时
         if (ros::Time::now() - last_msg_time_ > timeout_threshold_)
         {
             ROS_WARN("No traffic light color received recently. Defaulting to DRIVE.");
