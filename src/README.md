@@ -51,17 +51,15 @@ Start the node of the decision making package
   source devel/setup.bash
   rosrun decision_making decision_making_node
   ```
-A Unity simulation window should pop up, and you should be able to manually control the vehicle using the arrow keys or WASD.
 
-💬 Note: This is a minimal example launch file to verify that everything in the Unity simulation is accessible via ROS. You are encouraged to create and customize your own launch files if needed.
-
-✅ Running the Dummy Controller Node (Optional)
-If you'd like to test a simple dummy controller (without PID), run:
+✅ Running the Dummy Controller Node
+If you'd like to test a simple dummy controller , run:
 
 ```bash
 source devel/setup.bash
 rosrun dummy_controller dummy_controller_node
 ```
+
 ✅ Running the CSV Goal Publisher
 After making sure that both roscore and the simulation node are running, start the CSV goal publisher:
 
