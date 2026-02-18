@@ -1,19 +1,20 @@
+<?xml version="1.0"?>
 <package format="2">
   <name>path_recorder</name>
-  <version>0.0.0</version>
-  <description>The path_recorder package</description>
+  <version>0.1.0</version>
+  <description>Path recording, replay, and visualization utilities for Unity ROS driving experiments.</description>
 
-  <maintainer email="your-email@example.com">Your Name</maintainer>
+  <maintainer email="maintainer@example.com">Autonomous Driving Team</maintainer>
+  <license>MIT</license>
 
-  <license>TODO</license>
-
-  <!-- 添加 catkin 作为构建工具依赖 -->
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- 运行时依赖 -->
-  <depend>roscpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
 </package>
-

@@ -1,32 +1,56 @@
 #ifndef PATH_RECORDER_HPP
 #define PATH_RECORDER_HPP
 
-#include <string>
 #include <fstream>
+#include <string>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <nav_msgs/Path.h>
 
+namespace path_recorder {
+
+/**
+ * @brief Records sparse waypoints from pose/twist streams into a normalized CSV format.
+ *
+ * CSV schema:
+ * index,timestamp,x,y,z,yaw,velocity
+ */
 class PathRecorder {
 public:
-    PathRecorder();
-    ~PathRecorder();
+  PathRecorder();
+  ~PathRecorder();
 
-    void startRecording(const std::string& filename);
-    void stopRecording();
-    void recordTurn(const std::string& turn_type, const geometry_msgs::PoseStamped& msg);
+  /**
+   * @brief Opens CSV output and writes header.
+   */
+  bool Start(const std::string& csv_path);
 
-    void setStartPoint(const geometry_msgs::Point& point);
-    void setTwist(const geometry_msgs::TwistStamped& twist);
-    double calculateDistance(const geometry_msgs::Point& p1, const geometry_msgs::Point& p2);
+  /**
+   * @brief Stops recording and closes CSV file.
+   */
+  void Stop();
+
+  /**
+   * @brief Updates latest velocity sample used when writing a waypoint row.
+   */
+  void UpdateTwist(const geometry_msgs::TwistStamped& twist_msg);
+
+  /**
+   * @brief Returns planar distance between two points.
+   */
+  static double PlanarDistance(const geometry_msgs::Point& a, const geometry_msgs::Point& b);
+
+  /**
+   * @brief Writes one waypoint row from a pose sample.
+   */
+  bool RecordPose(const geometry_msgs::PoseStamped& pose_msg);
 
 private:
-    std::ofstream logfile;
-    geometry_msgs::Point start_point;            // 小车静止时作为原点
-    geometry_msgs::Point last_point;             // 上一个记录点
-    geometry_msgs::TwistStamped last_twist;      // 上一次速度
-    nav_msgs::Path path_msg;                     // 可用于可视化的路径消息
+  std::ofstream csv_file_;
+  geometry_msgs::TwistStamped last_twist_;
+  std::size_t next_index_;
 };
 
-#endif  // PATH_RECORDER_HPP
+}  // namespace path_recorder
 
+#endif  // PATH_RECORDER_HPP

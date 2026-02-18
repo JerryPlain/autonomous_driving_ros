@@ -1,55 +1,71 @@
-// this file is a ROS node that publishes static transforms for sensors on a car
-// It uses the tf2_ros library to broadcast static transforms, which are used to define the spatial relationships between different frames in a robotic system.
+#include <array>
+#include <string>
+
+#include <geometry_msgs/TransformStamped.h>
 #include <ros/ros.h>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
 
-/// Function to publish a static transform
-void publishStaticTF(const std::string& parent, const std::string& child,
-                     double x, double y, double z,
-                     double qx, double qy, double qz, double qw)
-{
-    static tf2_ros::StaticTransformBroadcaster static_broadcaster; // Create a static broadcaster instance
-    geometry_msgs::TransformStamped tf_msg; // Create a TransformStamped message
+namespace {
 
-    tf_msg.header.stamp = ros::Time::now();  // current timestamp
-    tf_msg.header.frame_id = parent; // parent frame
-    tf_msg.child_frame_id = child; // child frame
+struct SensorTF {
+  std::string parent;
+  std::string child;
+  double x;
+  double y;
+  double z;
+  double qx;
+  double qy;
+  double qz;
+  double qw;
+};
 
-    // Set the translation and rotation
-    tf_msg.transform.translation.x = x;
-    tf_msg.transform.translation.y = y;
-    tf_msg.transform.translation.z = z;
+/**
+ * @brief Publishes static sensor transforms for the ego vehicle.
+ */
+int Run() {
+  ros::NodeHandle nh;
 
-    tf_msg.transform.rotation.x = qx;
-    tf_msg.transform.rotation.y = qy;
-    tf_msg.transform.rotation.z = qz;
-    tf_msg.transform.rotation.w = qw;
+  // Quaternion corresponds to the camera mounting orientation used in simulation.
+  constexpr double qx = -0.5;
+  constexpr double qy = 0.5;
+  constexpr double qz = -0.5;
+  constexpr double qw = 0.5;
 
-    static_broadcaster.sendTransform(tf_msg); // send the transform
+  const std::array<SensorTF, 4> sensors = {{{"OurCar/INS", "OurCar/Sensors/DepthCamera", 0.3, 0.0, 1.2, qx, qy, qz, qw},
+                                            {"OurCar/INS", "OurCar/Sensors/RGBCameraLeft", 0.3, 0.1, 1.2, qx, qy, qz, qw},
+                                            {"OurCar/INS", "OurCar/Sensors/RGBCameraRight", 0.3, -0.1, 1.2, qx, qy, qz, qw},
+                                            {"OurCar/INS", "OurCar/Sensors/SemanticCamera", 0.3, 0.0, 1.3, qx, qy, qz, qw}}};
+
+  std::vector<geometry_msgs::TransformStamped> transforms;
+  transforms.reserve(sensors.size());
+
+  const ros::Time stamp = ros::Time::now();
+  for (const auto& sensor : sensors) {
+    geometry_msgs::TransformStamped tf;
+    tf.header.stamp = stamp;
+    tf.header.frame_id = sensor.parent;
+    tf.child_frame_id = sensor.child;
+    tf.transform.translation.x = sensor.x;
+    tf.transform.translation.y = sensor.y;
+    tf.transform.translation.z = sensor.z;
+    tf.transform.rotation.x = sensor.qx;
+    tf.transform.rotation.y = sensor.qy;
+    tf.transform.rotation.z = sensor.qz;
+    tf.transform.rotation.w = sensor.qw;
+    transforms.push_back(tf);
+  }
+
+  tf2_ros::StaticTransformBroadcaster broadcaster;
+  broadcaster.sendTransform(transforms);
+  ROS_INFO("Published %zu static transforms for perception sensors", transforms.size());
+
+  ros::spin();
+  return 0;
 }
 
-// Main function to initialize the ROS node and publish static transforms
-int main(int argc, char** argv) 
-{
-    ros::init(argc, argv, "static_tf_broadcaster_node");
-    ros::NodeHandle nh;
+}  // namespace
 
-    // wait for the ROS time to be valid
-    ros::Time::waitForValid();
-
-    // Publish static transforms for the sensors on the car
-    // The quaternion values are set to represent a 90-degree rotation around the Z-axis
-    const double qx = -0.5, qy = 0.5, qz = -0.5, qw = 0.5;
-
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/DepthCamera",    0.3,  0.0, 1.2, qx, qy, qz, qw);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraLeft",  0.3,  0.1, 1.2, qx, qy, qz, qw);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/RGBCameraRight", 0.3, -0.1, 1.2, qx, qy, qz, qw);
-    publishStaticTF("OurCar/INS", "OurCar/Sensors/SemanticCamera", 0.3,  0.0, 1.3, qx, qy, qz, qw);
-
-
-    ROS_INFO(" Static TFs published with timestamps (C++)"); // Log the publication of static transforms
-
-    ros::spin(); // Keep the node running to maintain the static transforms
-    return 0; // Keep the node running
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "static_tf_broadcaster_node");
+  return Run();
 }

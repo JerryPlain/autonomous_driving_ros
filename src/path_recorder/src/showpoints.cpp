@@ -1,91 +1,105 @@
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include <geometry_msgs/Point.h>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 
-// CSV 文件路径（根据你自己的路径修改）
-std::string csv_file_path = "/home/user/桌面/Projectros/introtoros_2025-main-project/project/src/path_recorder/recorded_path.csv";
+#include <geometry_msgs/Point.h>
+#include <ros/ros.h>
+#include <visualization_msgs/Marker.h>
 
-// 从 CSV 文件中读取点
-std::vector<geometry_msgs::Point> readPointsFromCSV(const std::string& filepath)
-{
-    std::vector<geometry_msgs::Point> points;
-    std::ifstream file(filepath);
-    if (!file.is_open())
-    {
-        ROS_ERROR("Failed to open file: %s", filepath.c_str());
-        return points;
+namespace {
+
+/**
+ * @brief Loads xyz points from recorder CSV and returns marker points.
+ */
+std::vector<geometry_msgs::Point> LoadPoints(const std::string& csv_path) {
+  std::ifstream file(csv_path.c_str());
+  if (!file.is_open()) {
+    ROS_ERROR("Unable to open CSV file: %s", csv_path.c_str());
+    return {};
+  }
+
+  std::string line;
+  std::getline(file, line);  // Header.
+
+  std::vector<geometry_msgs::Point> points;
+  while (std::getline(file, line)) {
+    if (line.empty()) {
+      continue;
     }
 
-    std::string line;
-    getline(file, line);  // 跳过表头
-
-    while (getline(file, line))
-    {
-        std::stringstream ss(line);
-        std::string token;
-        geometry_msgs::Point p;
-
-        // time
-        getline(ss, token, ',');
-
-        // x
-        getline(ss, token, ',');
-        p.x = std::stod(token);
-
-        // y
-        getline(ss, token, ',');
-        p.y = std::stod(token);
-
-        // v
-        getline(ss, token, ',');
-
-        p.z = 0.0;
-
-        points.push_back(p);
+    std::stringstream ss(line);
+    std::string token;
+    std::vector<std::string> cols;
+    while (std::getline(ss, token, ',')) {
+      cols.push_back(token);
     }
-    file.close();
-    ROS_INFO("Read %ld points from CSV file.", points.size());
-    return points;
+
+    if (cols.size() < 5) {
+      continue;
+    }
+
+    geometry_msgs::Point p;
+    p.x = std::stod(cols[2]);
+    p.y = std::stod(cols[3]);
+    p.z = std::stod(cols[4]);
+    points.push_back(p);
+  }
+
+  return points;
 }
 
-int main(int argc, char** argv)
-{
-    ros::init(argc, argv, "showpoints");
-    ros::NodeHandle nh;
+}  // namespace
 
-    ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "showpoints");
+  ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
 
-    std::vector<geometry_msgs::Point> points = readPointsFromCSV(csv_file_path);
+  std::string csv_path = "src/path_recorder/recorded_path.csv";
+  std::string frame_id = "map";
+  std::string topic = "/recorded_points";
+  double publish_hz = 1.0;
+  double marker_scale = 0.2;
 
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "map";
+  pnh.param<std::string>("csv_path", csv_path, csv_path);
+  pnh.param<std::string>("frame_id", frame_id, frame_id);
+  pnh.param<std::string>("topic", topic, topic);
+  pnh.param<double>("publish_hz", publish_hz, publish_hz);
+  pnh.param<double>("marker_scale", marker_scale, marker_scale);
+
+  const std::vector<geometry_msgs::Point> points = LoadPoints(csv_path);
+  if (points.empty()) {
+    ROS_ERROR("No points found in CSV: %s", csv_path.c_str());
+    return 1;
+  }
+
+  ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>(topic, 1, true);
+
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = frame_id;
+  marker.ns = "recorded_points";
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE_LIST;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = marker_scale;
+  marker.scale.y = marker_scale;
+  marker.scale.z = marker_scale;
+  marker.color.r = 1.0;
+  marker.color.g = 0.2;
+  marker.color.b = 0.2;
+  marker.color.a = 1.0;
+  marker.points = points;
+
+  ROS_INFO("Loaded %zu points for marker topic %s", points.size(), topic.c_str());
+
+  ros::Rate rate(publish_hz);
+  while (ros::ok()) {
     marker.header.stamp = ros::Time::now();
-    marker.ns = "recorded_points";
-    marker.id = 0;
-    marker.type = visualization_msgs::Marker::SPHERE_LIST;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.2;
-    marker.scale.y = 0.2;
-    marker.scale.z = 0.2;
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
-    marker.color.a = 1.0;
+    marker_pub.publish(marker);
+    ros::spinOnce();
+    rate.sleep();
+  }
 
-    marker.points = points;
-
-    ros::Rate rate(1);
-    while (ros::ok())
-    {
-        marker.header.stamp = ros::Time::now();
-        marker_pub.publish(marker);
-        ros::spinOnce();
-        rate.sleep();
-    }
-
-    return 0;
+  return 0;
 }
-

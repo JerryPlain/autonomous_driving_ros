@@ -1,68 +1,111 @@
+#include <algorithm>
+#include <cctype>
+#include <string>
+
 #include <ros/ros.h>
 #include <std_msgs/String.h>
 #include <traffic_light_detector/TrafficLightColor.h>
 
-class TrafficDecisionPublisher
-{
+namespace {
+
+/**
+ * @brief Normalizes color labels to lowercase to keep message mapping robust.
+ */
+std::string NormalizeColor(std::string color) {
+  std::transform(color.begin(), color.end(), color.begin(), [](unsigned char c) {
+    return static_cast<char>(std::tolower(c));
+  });
+  return color;
+}
+
+/**
+ * @brief Converts traffic light state into a control-friendly decision label.
+ */
+std::string DecisionFromColor(const std::string& color) {
+  if (color == "red") {
+    return "BRAKE";
+  }
+  if (color == "yellow") {
+    return "ACCELERATE";
+  }
+  if (color == "green") {
+    return "DRIVE";
+  }
+  if (color == "none") {
+    return "UNKNOWN";
+  }
+  return "UNKNOWN";
+}
+
+class TrafficDecisionNode {
 public:
-    TrafficDecisionPublisher()
-        : nh_(), loop_interval_(0.05), traffic_light_state_("UNKNOWN")
-    {
-        pub_ = nh_.advertise<std_msgs::String>("traffic_decision", 1);
-        sub_ = nh_.subscribe("traffic_light_color", 1, &TrafficDecisionPublisher::trafficLightCallback, this);
-        timer_ = nh_.createTimer(ros::Duration(loop_interval_), &TrafficDecisionPublisher::decisionLoop, this);
+  TrafficDecisionNode()
+      : nh_(),
+        pnh_("~"),
+        decision_timeout_sec_(1.0),
+        publish_interval_sec_(0.05),
+        latest_color_("none") {
+    std::string input_topic = "traffic_light_color";
+    std::string output_topic = "traffic_decision";
 
-        last_msg_time_ = ros::Time::now();
-        timeout_threshold_ = ros::Duration(1.0);  
-    }
+    pnh_.param<std::string>("input_topic", input_topic, input_topic);
+    pnh_.param<std::string>("output_topic", output_topic, output_topic);
+    pnh_.param<double>("decision_timeout_sec", decision_timeout_sec_, decision_timeout_sec_);
+    pnh_.param<double>("publish_interval_sec", publish_interval_sec_, publish_interval_sec_);
 
-    void trafficLightCallback(const traffic_light_detector::TrafficLightColor::ConstPtr &msg)
-    {
-        traffic_light_state_ = msg->color;
-        last_msg_time_ = ros::Time::now();  
-        ROS_INFO("Received traffic light color: %s", traffic_light_state_.c_str());
-    }
+    decision_pub_ = nh_.advertise<std_msgs::String>(output_topic, 10);
+    color_sub_ = nh_.subscribe(input_topic, 10, &TrafficDecisionNode::ColorCallback, this);
+    timer_ = nh_.createTimer(ros::Duration(publish_interval_sec_),
+                             &TrafficDecisionNode::PublishDecision, this);
 
-    void decisionLoop(const ros::TimerEvent &)
-    {
-        std_msgs::String decision_msg;
-
-        if (ros::Time::now() - last_msg_time_ > timeout_threshold_)
-        {
-            ROS_WARN("No traffic light color received recently. Defaulting to DRIVE.");
-            decision_msg.data = "DRIVE";
-        }
-        else
-        {
-            if (traffic_light_state_ == "red")
-                decision_msg.data = "BRAKE";
-            else if (traffic_light_state_ == "yellow")
-                decision_msg.data = "ACCELERATE";
-            else if (traffic_light_state_ == "green")
-                decision_msg.data = "DRIVE";
-            else
-                decision_msg.data = "UNKNOWN";
-        }
-
-        pub_.publish(decision_msg);
-    }
+    last_color_update_ = ros::Time(0);
+    ROS_INFO("decision_making_node started. input=%s output=%s timeout=%.2f",
+             input_topic.c_str(), output_topic.c_str(), decision_timeout_sec_);
+  }
 
 private:
-    ros::NodeHandle nh_;
-    ros::Publisher pub_;
-    ros::Subscriber sub_;
-    ros::Timer timer_;
-    const float loop_interval_;
-    std::string traffic_light_state_;
+  /**
+   * @brief Stores latest color label and update timestamp from detector output.
+   */
+  void ColorCallback(const traffic_light_detector::TrafficLightColor::ConstPtr& msg) {
+    latest_color_ = NormalizeColor(msg->color);
+    last_color_update_ = ros::Time::now();
+  }
 
-    ros::Time last_msg_time_;
-    ros::Duration timeout_threshold_;
+  /**
+   * @brief Publishes a decision periodically; falls back to DRIVE after timeout.
+   */
+  void PublishDecision(const ros::TimerEvent&) {
+    const ros::Time now = ros::Time::now();
+
+    std_msgs::String decision_msg;
+    if (last_color_update_.isZero() ||
+        (now - last_color_update_).toSec() > decision_timeout_sec_) {
+      decision_msg.data = "DRIVE";
+    } else {
+      decision_msg.data = DecisionFromColor(latest_color_);
+    }
+
+    decision_pub_.publish(decision_msg);
+  }
+
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
+  ros::Subscriber color_sub_;
+  ros::Publisher decision_pub_;
+  ros::Timer timer_;
+
+  double decision_timeout_sec_;
+  double publish_interval_sec_;
+  std::string latest_color_;
+  ros::Time last_color_update_;
 };
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "decision_making_node");
-    TrafficDecisionPublisher node;
-    ros::spin();
-    return 0;
+}  // namespace
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv, "decision_making_node");
+  TrafficDecisionNode node;
+  ros::spin();
+  return 0;
 }
